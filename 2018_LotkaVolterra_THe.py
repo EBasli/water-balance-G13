@@ -13,6 +13,7 @@ import scipy as sp
 from scipy import integrate
 import MyTicToc as mt
 
+
 def tic():
     # Homemade version of matlab tic and toc functions
     import time
@@ -28,6 +29,46 @@ def toc():
     else:
         print("Toc: start time not set")
 
+
+
+#Characteristics Cell VP-06 Wieringermeer landfill:
+#base area [m2]
+A_base = 28355
+#top area [m2]
+A_top = 9100
+#slope witdh [m]
+w = 38
+#waste body height [m]
+h_body = 12
+#cover layer height [m]
+h_cover = 1.5
+#waste (net weight [kg])
+W = 281083000
+
+
+#Data import
+import pandas as pd
+
+meteo = pd.read_excel('WieringermeerData_Meteo.xlsx')
+leachate = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
+
+# Definition of data
+rain = meteo.rain_station       #m/day
+evap = meteo.pEV                #m/day
+temp = meteo.temp               #celsius
+leach = leachate.loc[:,0]       #m3/day   CUMULATIVE
+
+
+# Definition of Rate Equation
+def dSdt(t, S):
+    return np.array([S[0] - S[2] - S[1],
+                     (1-S[4])*S[2] - S[3],
+                     S[4]*S[2] + S[3] - S[5]])
+#S = [J_rf, E, L_cl, L_wb, beta, Q_dr]
+
+
+
+#%%
 
 # Definition of parameters
 a = 1
