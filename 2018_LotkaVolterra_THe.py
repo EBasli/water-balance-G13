@@ -30,7 +30,6 @@ def toc():
         print("Toc: start time not set")
 
 
-
 #Characteristics Cell VP-06 Wieringermeer landfill:
 #base area [m2]
 A_base = 28355
@@ -56,7 +55,13 @@ leachate = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
 rain = meteo.rain_station       #m/day
 evap = meteo.pEV                #m/day
 temp = meteo.temp               #celsius
-leach = leachate.loc[:,0]       #m3/day   CUMULATIVE
+leach_cum = leachate.loc[:,0]   #m3/day   CUMULATIVE
+leach = []                      #m3/day
+leach.append(leach_cum[0])
+for i in range(len(leach_cum)-1):
+    l = leach_cum[i+1] - leach_cum[i]
+    leach.append(l)
+
 
 
 # Definition of Rate Equation
@@ -67,6 +72,26 @@ def dSdt(t, S):
 #S = [J_rf, E, L_cl, L_wb, beta, Q_dr]
 
 
+
+
+def water_balance():
+    
+    J_rf = rain
+    if S_cl < S_EV_min:
+        f_red = 0
+    elif S_cl > S_EV_max:
+        f_red = 1
+    else:
+        (S_cl - S_EV_min) / (S_EV_max - S_EV_min)
+    E = pEv * C_f * f_red
+    L_cl = a * ((S_cl - S_cl_min) / (S_cl_max - S_cl_min))**b_cl
+    L_wb = a * ((S_wb - S_wb_min) / (S_wb_max - S_wb_min))**b_wb
+    beta = beta_0 * ((S_cl - S_cl_min) / (S_cl_max - S_cl_min))
+    Q_dr = beta * L_cl + L_wb
+    S = [J_rf, E, L_cl, L_wb, beta, Q_dr]
+    
+    
+    
 
 #%%
 
