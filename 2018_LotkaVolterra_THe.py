@@ -28,6 +28,92 @@ def toc():
     else:
         print("Toc: start time not set")
 
+#Characteristics Cell VP-06 Wieringermeer landfill:
+#base area [m2]
+A_base = 28355
+#top area [m2]
+A_top = 9100
+#slope witdh [m]
+w = 38
+#waste body height [m]
+h_body = 12
+#cover layer height [m]
+h_cover = 1.5
+#waste (net weight [kg])
+W = 281083000
+
+
+#Data import
+import pandas as pd
+
+meteo = pd.read_excel('WieringermeerData_Meteo.xlsx')
+leachate = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
+
+# Definition of data
+rain = meteo.rain_station       #m/day
+evap = meteo.pEV                #m/day
+temp = meteo.temp               #celsius
+leach_cum = leachate.loc[:,0]   #m3/day   CUMULATIVE
+leach = []                      #m3/day
+leach.append(leach_cum[0])
+for i in range(len(leach_cum)-1):
+    l = leach_cum[i+1] - leach_cum[i]
+    leach.append(l)
+
+
+
+# Definition of Rate Equation
+def dSdt(t, S):
+    return np.array([S[0] - S[2] - S[1],
+                     (1-S[4])*S[2] - S[3],
+                     S[4]*S[2] + S[3] - S[5]])
+#S = [J_rf, E, L_cl, L_wb, beta, Q_dr]
+
+
+
+
+def water_balance():
+    #Definition of time
+    tOut = np.linspace(0, 100, 200)
+    nOut = np.shape(tOut)[0]
+    
+    #Initial conditions
+    S_cl = 10
+    S_wb = 10
+    mt.tic()
+    t_span = [tOut[0], tOut[-1]]
+    
+    #Definitions
+    a = 10  # saturated hydraulic conductivity (m/day)
+    S_cl_min = 10  # min achievable storage in cover layer
+    S_cl_max = 10  # max achievable storage in cover layer
+    S_wb_min = 10  # min achievable storage in waste layer
+    S_wb_max = 10  # max achievable storage in waste layer
+    b_cl = 10  # emprical parameter (dimensionless)
+    b_wb = 10  # emprical parameter (dimensionless)
+    pEv = evap # potential evaporation (m/day) from excel file
+    C_f = 10     # crop factor
+    S_EV_min = 10
+    S_EV_max = 10
+    beta_0 = 10    # beta zero
+    
+    #Equations
+    J_rf = rain
+    if S_cl < S_EV_min:
+        f_red = 0
+    elif S_cl > S_EV_max:
+        f_red = 1
+    else:
+        (S_cl - S_EV_min) / (S_EV_max - S_EV_min)
+    E = pEv * C_f * f_red
+    L_cl = a * ((S_cl - S_cl_min) / (S_cl_max - S_cl_min))**b_cl
+    L_wb = a * ((S_wb - S_wb_min) / (S_wb_max - S_wb_min))**b_wb
+    beta = beta_0 * ((S_cl - S_cl_min) / (S_cl_max - S_cl_min))
+    Q_dr = beta * L_cl + L_wb
+    S = [J_rf, E, L_cl, L_wb, beta, Q_dr]
+    
+    
+    
 
 # Definition of parameters
 a = 1
