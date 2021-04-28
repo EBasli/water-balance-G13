@@ -43,14 +43,14 @@ Swbmin = ba * wbh * p * 0.5
 Swbmax = ba * wbh * p 
 
 'value estimations - to be adjusted'
-a = 1
+a = 0.48
 bc = 7.9                # from Benettin, dont know if right
 bwb = 28                # from Benettin, dont know if right 
 ß0 = 0.85               # from Benettin, dont know if right
 Semin = 0.1 * Scmax
 Semax = 0.9 * Scmax
 
-M = pd.read_excel('WieringermeerData_Meteo.xlsx', parse_dates='datetime') # index_col='datetime'
+M = pd.read_excel('WieringermeerData_Meteo.xlsx') # index_col='datetime'
 L = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
 
 pEv = M.pEV                     # potential evapotranspiration [m/day] --> use this way: display(pEv['2003-01-03'])
@@ -83,7 +83,6 @@ def dSdt(t, S):
     Lc = a * ((S[0] - Scmin) / (Scmax - Scmin)) ** bc  # Sc[t]
     Lw = a * ((S[1] - Swbmin) / (Swbmax - Swbmin)) ** bwb  # Swb[t]
     ß = ß0 * ((S[0] - Scmin) / (Scmax - Scmin))
-    Qdr = ß * Lc + Lw
 
     dSc = J[int(t)] - Lc - Et
     dSwb = (1 - ß) * Lc - Lw
@@ -106,7 +105,12 @@ def value_correction(ScODE, SwbODE):
 
 value_correction_vectorize = np.vectorize(value_correction)
 
-
+def L_production(Sc_new, Swb_new):
+    Lc = a * ((Sc_new - Scmin) / (Scmax - Scmin)) ** bc * ta # Sc[t]
+    Lw = a * ((Swb_new - Swbmin) / (Swbmax - Swbmin)) ** bwb * ba # Swb[t]
+    ß = ß0 * ((Sc_new - Scmin) / (Scmax - Scmin))
+    Qdr = ß * Lc + Lw
+    return Qdr
 
 def main():
 # Definition of output times (0 to 2757 days)
@@ -125,14 +129,17 @@ def main():
     # infodict['message']                     # >>> 'Integration successful.'
     ScODE = YODE.y[0,:]
     SwbODE = YODE.y[1,:]
-    SdrODE = YODE.y[2,:]
+    Sc_new, Swb_new = value_correction_vectorize(ScODE, SwbODE)
+    
+    L_day = L_production(Sc_new, Swb_new) # total daily leachate production
+    L_tot = np.cumsum(L_day) # total leachate production in time period defined
+    QF = np.sum(L_tot - L) ** 2
     
     toc()
     
     plt.figure()
-    plt.plot(tOut, ScODE, 'r-', label='Cover layer')
-    plt.plot(tOut, SwbODE  , 'b-', label='Waste body')
-    plt.plot(tOut, SdrODE  , 'g-', label='Drainage')
+    plt.plot(tOut, LP, 'r-', label='Cover layer')
+    plt.plot(tOut, L_tot  , 'b-', label='Waste body')
     
     plt.grid()
     plt.legend(loc='best')
@@ -149,6 +156,8 @@ def main():
     plt.xlabel('waste body storage')
     plt.ylabel('Coverlayer storage')
     plt.title('Storage rate landfill')
+    
+   # return QF
 
 if __name__ == "__main__":
     main()
