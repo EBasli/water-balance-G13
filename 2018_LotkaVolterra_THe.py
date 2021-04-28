@@ -90,7 +90,7 @@ Swbmin  = Swbmax * 0.5      # unit m, minimum storage in waste body layer where 
 Cf = 0.8            # crop factor 
 
 
-#parameterse to be optimized
+#parameters to be optimized
 a       = 0.45          # unit m/d, saturated hydraulic conductivity, chosen from Shank (1993) 20year old landfill 
 bcl     = 7.9           # dimensionless empirical parameter cover layer
 bwb     = 28.0          # dimensionless empirical parameter waste body 
@@ -181,7 +181,7 @@ def leachate_produc (SclODE, SwbODE):
 
     
 # Definition of output times
-tOut = np.linspace(0, 6208, 6209)              # whole length of wetaher data 
+tOut = np.linspace(0, 6208, 6209)              # whole length of weather data 
 # Initial case, water stored in cover and drainage layer
 S0 = np.array([Sclmax * 0.2, Swbmax * 0.2])
 t_span = [tOut[0], tOut[-1]] #tOut -1 give whole length back 
