@@ -12,20 +12,7 @@ import matplotlib.pyplot as plt
 import scipy as sp
 from scipy import integrate
 
-
-<<<<<<< Updated upstream
-
-def toc():
-    import time
-    if 'startTime_for_tictoc' in globals():
-        print("Elapsed time is " + str(time.time() - startTime_for_tictoc)
-              + " seconds.")
-    else:
-        print("Toc: start time not set")
-
-=======
-    
->>>>>>> Stashed changes
+#to show you how it works 
 
 # Definition of parameters
 a = 1
