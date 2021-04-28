@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
@@ -27,91 +26,95 @@ def toc():
 
 
 # definition of parameters:
-ba = 28355  # base area [m²] 
-ta = 9100  # top area [m²]
-sw = 38  # slope wdith [m]
-wbh = 12  # waste body height [m]
-clh = 1.5  # cover layer height [m]
-w = 281083000  # waste (wet weight) [kg]
+ba = 28355              # base area [m²] 
+ta = 9100               # top area [m²]
+sw = 38                 # slope wdith [m]
+wbh = 12                # waste body height [m]
+clh = 1.5               # cover layer height [m]
+w = 281083000           # waste (wet weight) [kg]
 
-# Storage capacity = 1.5  # [mm/cm depth]
-Scap = 1.5 * 0.1 * clh * ta  # [m³]
+p = 0.35                # from Benettin
+fc = 0.6                # crop factor estimation, grassland
+
+'where does the 0.5 come from - what source?'
+Scmin = ta * clh * p * 0.5  
+Scmax = ta * clh * p
+Swbmin = ba * wbh * p * 0.5
+Swbmax = ba * wbh * p 
+
+'value estimations - to be adjusted'
 a = 1
-fc = 0.6  # crop factor estimation, grassland
-bc = 7.9  # from Benettin, dont know if right
-bwb = 28  # from Benettin, dont know if right 
-ß0 = 0.85  # from Benettin, dont know if right
+bc = 7.9                # from Benettin, dont know if right
+bwb = 28                # from Benettin, dont know if right 
+ß0 = 0.85               # from Benettin, dont know if right
+Semin = 0.1 * Scmax
+Semax = 0.9 * Scmax
 
-'temporary assumed values'
-Scmin = 0.1
-Scmax = 0.9
-Swbmin = 0.2
-Swbmax = 0.9
-Semin = 0.9
-Semax = 0.5
+M = pd.read_excel('WieringermeerData_Meteo.xlsx', parse_dates='datetime') # index_col='datetime'
+L = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
 
-M = pd.read_excel('WieringermeerData_Meteo.xlsx') # index_col='datetime'
-# display(M)
-
-pEv = M.pEV         # potential evapotranspiration [m/day] --> use this way: display(pEv['2003-01-03'])
-R = M.rain_station  # inflow [m/day]
- 
+pEv = M.pEV                     # potential evapotranspiration [m/day] --> use this way: display(pEv['2003-01-03'])
+J = M.rain_station              # inflow [m/day]
+# headers edited in excel file
+LP = L.Leachate_Production      # Leachate Production [m/day]
 
 
    
 # Definition of rate equations:
-'What values are predefined and what must be taken from the available data?'
-
-def g(R, t):
-    t = int(t)
-    return R[t]
-J = np.vectorize(g)
-
-def f(pEv, S, t):
+def dSdt(t, S):
+    # making sure storage value is within boundries:
+    if S[0] < Scmin:
+        S[0] = Scmin
+    elif S[0] > Scmax:
+        S[0] = Scmax
+    if S[1] < Swbmin:
+        S[1] = Swbmin
+    elif S[1] > Swbmax:
+        S[1] = Swbmax 
+    
+    # rate equations:
     if S[0] < Semin:
-        fs = 0
+        fr = 0
     elif Semin <= S[0] <= Semax:
-        fs = (S[0] - Semin) / (Semax - Semin)
+        fr = (S[0] - Semin) / (Semax - Semin)
     else: 
-        fs = 1
-    return pEv[t] * fc * fs
-E = np.vectorize(f)
+        fr = 1
+    Et = pEv[int(t)] * fc * fr
+    Lc = a * ((S[0] - Scmin) / (Scmax - Scmin)) ** bc  # Sc[t]
+    Lw = a * ((S[1] - Swbmin) / (Swbmax - Swbmin)) ** bwb  # Swb[t]
+    ß = ß0 * ((S[0] - Scmin) / (Scmax - Scmin))
+    Qdr = ß * Lc + Lw
 
-def h(S, t):
-    return a * ((S[0] - Scmin) / (Scmax - Scmin)) ** bc
-Lc = np.vectorize(h)
+    dSc = J[int(t)] - Lc - Et
+    dSwb = (1 - ß) * Lc - Lw
+    return np.array([dSc, dSwb])
+                   # ß * Lc + Lw - Qdr])
 
-def dSdt(S, t):
-    return J(R, t) - Lc(S, t) - E(pEv, S, t)
+def value_correction(ScODE, SwbODE):
+    if ScODE < Scmin:
+        ScODE = Scmin
+    elif ScODE > Scmax:
+        ScODE = Scmax
+    if SwbODE < Swbmin:
+        SwbODE = Swbmin
+    elif SwbODE > Swbmax:
+        SwbODE = Swbmax
+    
+    Sc_new = ScODE
+    Swb_new = SwbODE
+    return Sc_new, Swb_new
 
-# def dSdt(t, S):
-#    if S[0] < Semin:
-#        fs = 0
-#    elif Semin <= S[0] <= Semax:
-#        fs = (S[0] - Semin) / (Semax - Semin)
-#    else: 
-#        fs = 1
-#    Et = pEv[t] * fc * fs
-#    Lc = a * ((S[0] - Scmin) / (Scmax - Scmin)) ** bc  # Sc[t]
- #   Lw = a * ((S[1] - Swbmin) / (Swbmax - Swbmin)) ** bwb  # Swb[t]
-#    ß = ß0 * ((S[0] - Scmin) / (Scmax - Scmin))
-#    Qdr = ß * Lc + Lw
-#    J = Jt[t]
-
- #   return np.array([J - Lc - Et,
- #                   (1 - ß) * Lc - Lw])
- #                   # ß * Lc + Lw - Qdr])
+value_correction_vectorize = np.vectorize(value_correction)
 
 
 
 def main():
 # Definition of output times (0 to 2757 days)
     tOut = np.linspace(0, 1500, 2757)  
-    # print(tOut)
     nOut = np.shape(tOut)[0]
     
     # Initial case: Sc = 0.7, Swb = 0.8
-    S0 = np.array([0.7, 0.8])
+    S0 = np.array([Semin, Semax])
     
     import scipy.integrate as spint
     
