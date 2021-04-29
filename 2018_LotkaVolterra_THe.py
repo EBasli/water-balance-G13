@@ -44,21 +44,19 @@ w = 38
 W = 281083000
 
 
-p = 0.35                    #porosity 
-S_cl_max = p * h_cl            
-S_cl_min = 0.5 * S_cl_max           
-S_wb_max = p * h_wb            
-S_wb_min = 0.5 * S_wb_max         
-C_f = 0.8
-ESmin = 0.1 * S_cl_max
-ESmax = 0.9 * S_cl_max
+p = 0.35                        #porosity 
+S_cl_max = p * h_cl             # 0.525
+S_cl_min = 0.5 * S_cl_max       # 0.2625   
+S_wb_max = p * h_wb             # 4.2
+S_wb_min = 0.5 * S_wb_max       # 2.1      
+C_f = 0.8                       #crop factor
+S_EV_min = 0.1 * S_cl_max       # 0.0525
+S_EV_max = 0.9 * S_cl_max       # 0.4725
 
 # a = 0.2
 # b_cl = 7.9
 # b_wb = 28
 # beta_0 = 0.85
-# S_EV_min = 0.0525
-# S_EV_max = 0.4725
 
 
 # Definition of Rate Equation
@@ -135,7 +133,7 @@ def water_balance(a, b_cl, b_wb, beta_0, S_EV_min, S_EV_max):
     plt.legend(loc='best')
     return 
 
-water_balance(a = 0.2, b_cl = 8, b_wb = 28, beta_0 = 0.8, S_EV_min = 0.045, S_EV_max = 0.45)
+water_balance(a = 0.2, b_cl = 7.9, b_wb = 28, beta_0 = 0.85, S_EV_min = 0.0525, S_EV_max = 0.4725)
 
     
         
