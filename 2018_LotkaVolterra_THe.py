@@ -56,8 +56,7 @@ L = pd.read_excel('WieringermeerData_LeachateProduction.xlsx')
 pEv = M.pEV                     # potential evapotranspiration [m/day] --> use this way: display(pEv['2003-01-03'])
 J = M.rain_station              # inflow [m/day]
 # headers edited in excel file
-LP = L.Leachate_Production      # Leachate Production [m/day]
-
+LP = L.Leachate_Production      # Leachate Production [m³/day]
 
    
 # Definition of rate equations:
@@ -114,7 +113,7 @@ def L_production(Sc_new, Swb_new):
 
 def main():
 # Definition of output times (0 to 2757 days)
-    tOut = np.linspace(0, 1500, 2757)  
+    tOut = np.linspace(0, 6209, 6210)  
     nOut = np.shape(tOut)[0]
     
     # Initial case: Sc = 0.7, Swb = 0.8
@@ -131,15 +130,18 @@ def main():
     SwbODE = YODE.y[1,:]
     Sc_new, Swb_new = value_correction_vectorize(ScODE, SwbODE)
     
-    L_day = L_production(Sc_new, Swb_new) # total daily leachate production
-    L_tot = np.cumsum(L_day) # total leachate production in time period defined
-    QF = np.sum(L_tot - L) ** 2
+    Qdr_day = L_production(Sc_new, Swb_new) # total daily leachate production
+    Qdr_tot = np.cumsum(Qdr_day) # total leachate production in time period defined
+    #QF = np.sum(Qdr_tot - LP) ** 2
     
     toc()
     
     plt.figure()
-    plt.plot(tOut, LP, 'r-', label='Cover layer')
-    plt.plot(tOut, L_tot  , 'b-', label='Waste body')
+    plt.plot(LP.index, LP, 'r-', label='leachate measured')
+    plt.plot(tOut, Qdr_tot  , 'b-', label='leachate simulated total')
+    #plt.plot(tOut, Qdr_day, 'g-', label='leachate simulated daily')
+    #plt.plot(tOut, Sc_new, 'l-', label='storage cover layer')
+    #plt.plot(tOut, Swb_new, 'p-', label='storage waste body')
     
     plt.grid()
     plt.legend(loc='best')
@@ -150,14 +152,14 @@ def main():
 # f1.savefig('rabbits_and_foxes_1.png')
 
     plt.figure()
-    plt.plot(SwbODE, ScODE, 'b-', label='ODE')
+    plt.plot(Swb_new, Sc_new, 'b-', label='ODE')
     plt.grid()
     plt.legend(loc='best')
     plt.xlabel('waste body storage')
     plt.ylabel('Coverlayer storage')
     plt.title('Storage rate landfill')
     
-   # return QF
+    #return QF
 
 if __name__ == "__main__":
     main()
