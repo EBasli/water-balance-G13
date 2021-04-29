@@ -38,9 +38,9 @@ V_wb = A_wb * h_wb  #[m3]
 A_cl = 9100         #[m2]
 h_cl = 1.5          #[m]
 V_cl = A_cl * h_cl  #[m3]
-#slope witdh [m]
+#slope witdh [m]            NOT USED
 w = 38
-#waste (net weight [kg])
+#waste (net weight [kg])    NOT USED
 W = 281083000
 
 
@@ -117,21 +117,22 @@ def water_balance(a, b_cl, b_wb, beta_0, S_EV_min, S_EV_max):
     t_span = [tOut[0], tOut[-1]]
     Y0 = np.array([S_cl_max * 0.1, S_wb_max * 0.1])
     
-    YODE = integrate.solve_ivp(dYdt, t_span, Y0, t_eval=tOut,
+    Y_ODE = integrate.solve_ivp(dYdt, t_span, Y0, t_eval=tOut,
                                method='RK45', vectorized=True,
                                rtol=1e-5)
-    ScODE = YODE.y[0, 3452:]
-    SwODE = YODE.y[1, 3452:]
-    ScODE, SwODE = correction_vec(ScODE, SwODE)
+    S_cl_ODE = Y_ODE.y[0, -2757:]
+    S_wb_ODE = Y_ODE.y[1, -2757:]
+    S_cl_ODE, S_wb_ODE = correction_vec(S_cl_ODE, S_wb_ODE)
     
-    sim_data = leachate(ScODE, SwODE)
+    sim_data = leachate(S_cl_ODE, S_wb_ODE)
     cum_sim_data = np.cumsum(sim_data)
     
-    plt.clf()
+    plt.figure()
+    plt.grid()
     plt.plot(tOut[:2757], leach_cum, label='Measured leachate')
     plt.plot(tOut[:2757], cum_sim_data, label='Simulated leachate')
     plt.title('Landfill leachate model fit')
-    plt.legend()
+    plt.legend(loc='best')
     return 
 
 water_balance(a = 0.2, b_cl = 8, b_wb = 28, beta_0 = 0.8, S_EV_min = 0.045, S_EV_max = 0.45)
