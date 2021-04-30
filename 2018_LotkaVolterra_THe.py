@@ -34,7 +34,7 @@ wbh = 12                # waste body height [m]
 clh = 1.5               # cover layer height [m]
 w = 281083000           # waste (wet weight) [kg]
 
-p = 0.35                # from Benettin
+p = 0.35                # from Bennetin
 fc = 0.6                # crop factor estimation, grassland
 
 'where does the 0.5 come from - what source?'
@@ -45,9 +45,9 @@ Swbmax = ba * wbh * p
 
 'value estimations - to be adjusted'
 a = 741                # starting value 0.48 from Benettin
-bc = 0.26                # 7.9 from Benettin
-bwb = 100                # 28 from Benettin
-ß0 = 26.5              # 0.85 from Benettin
+bc = 0.26                # 7.9 from Bennetin
+bwb = 100                # 28 from Bennetin
+ß0 = 26.5              # 0.85 from Bennetin
 Semin = 0.2 * Scmax     # start 0.1 * Scmax
 Semax = 0.9 * Scmax     # start 0.9 * Scmax
 
@@ -127,42 +127,39 @@ def main():
     SODE = spint.solve_ivp(dSdt, t_span, S0, t_eval=tOut, vectorized=True,
                            method='RK45', rtol=1e-5)
     # infodict['message']                     # >>> 'Integration successful.'
-    ScODE = SODE.y[0, 3452:]
-    SwbODE = SODE.y[1, 3452:]
+    ScODE = SODE.y[0, 3453:]
+    SwbODE = SODE.y[1, 3453:]
     Sc_new, Swb_new = value_correction_vectorize(ScODE, SwbODE)
     
     Qdr_day = L_production(Sc_new, Swb_new) # total daily leachate production
     Qdr_tot = np.cumsum(Qdr_day) # total leachate production in time period defined
-    #QF = np.sum(Qdr_tot - LP) ** 2
     
     
     
     toc()
     
     plt.figure()
-    plt.plot(LP.index, LP, 'r-', label='leachate measured')
-    plt.plot(range(len(Qdr_tot)), Qdr_tot  , 'b-', label='leachate simulated total')
+    plt.plot(LP.index, LP, 'r-', label='Leachate, measured')
+    plt.plot(range(len(Qdr_tot)), Qdr_tot  , 'b-', label='Leachate, simulated')
     #plt.plot(tOut, Qdr_day, 'g-', label='leachate simulated daily')
     #plt.plot(tOut, Sc_new, 'l-', label='storage cover layer')
     #plt.plot(tOut, Swb_new, 'p-', label='storage waste body')
     
     plt.grid()
     plt.legend(loc='best')
-    plt.xlabel('time')
-    plt.ylabel('Storage')
-    plt.title('Storage rate landfill')
-
-# f1.savefig('rabbits_and_foxes_1.png')
+    plt.xlabel('Time [days]')
+    plt.ylabel('Leachate [m³]')
+    plt.title('Cumulative leachate amount over time - starting date 14.06.2012')
+    
 
     plt.figure()
-    plt.plot(Swb_new, Sc_new, 'bo', label='ODE')
+    plt.plot(Swb_new / ba, Sc_new / ta, 'bo', label='ODE')
     plt.grid()
     plt.legend(loc='best')
-    plt.xlabel('waste body storage')
-    plt.ylabel('Coverlayer storage')
-    plt.title('Storage rate landfill')
-    
-    #return QF
+    plt.xlabel('waste body')
+    plt.ylabel('Cover layer')
+    plt.title('Storage landfill [m]')
+
 
 if __name__ == "__main__":
     main()
