@@ -40,7 +40,7 @@ Scmax = ta * clh * p
 Swbmin = ba * wbh * p * 0.5
 Swbmax = ba * wbh * p 
 
-'value estimations - to be adjusted'
+'value estimations - to be optimized'
 a = 741                  # starting value 0.48 from Benettin
 bc = 0.26                # 7.9 from Benettin
 bwb = 100                # 28 from Benettin
